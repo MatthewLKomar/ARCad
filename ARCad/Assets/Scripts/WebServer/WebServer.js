@@ -5,9 +5,17 @@
 
 var remoteServiceModule = script.remoteServiceModule;
 
-function ParseJson()
+function ParseJson(JsonObject)
 {
-
+  if (JsonObject)
+  {
+    JsonObject["id"];
+    JsonObject["value"];
+    JsonObject["accel"];
+    JsonObject["gyro"];
+    JsonObject["timestamp"];
+    JsonObject["opts"];
+  }
 }
 
 
@@ -24,7 +32,7 @@ function makeRequest() {
     if (response.statusCode === 200) {
       // Check if the response status is 200 (OK)
       print('Body: ' + response.body); 
-      const JsonObject = JSON.parse(response.body);
+      JsonObject = JSON.parse(response.body);
       ParseJson(JsonObject);
     }
   });
