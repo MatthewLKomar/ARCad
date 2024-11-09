@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothStatusCodes
@@ -17,15 +19,25 @@ import java.util.UUID
 
 class BLEManager(private val context: Context) {
 
-    val SERVICE_UUID = "your-service-uuid"
-    val CHARACTERISTIC_UUID = "your-characteristic-uuid"
-    val DESCRIPTOR_UUID = "your-descriptor-uuid"
-    val TARGET_MAC = "AA:BB:CC:DD:EE:FF"  // Replace this with the MAC address of the target device
+    val SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"   // Nordic UART Service
+    val CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"    // TX Characteristic
+    val DESCRIPTOR_UUID = "0x2902"
+    val TARGET_MAC = "DF:AA:D6:83:21:4F"  // Replace this with the MAC address of the target device
 
 
     private val bluetoothAdapter: BluetoothAdapter? = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     private var bluetoothGatt: BluetoothGatt? = null
     private val bluetoothLeScanner: BluetoothLeScanner? = bluetoothAdapter?.bluetoothLeScanner
+
+    // Create ScanFilter for the target MAC address
+    val scanFilter = ScanFilter.Builder()
+        .setDeviceAddress(TARGET_MAC) // Set the target MAC address
+        .build()
+
+    // Create ScanSettings for BLE scan
+    val scanSettings = ScanSettings.Builder()
+        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) // Set scan mode
+        .build()
 
     private val scanCallback = object : android.bluetooth.le.ScanCallback() {
         @SuppressLint("MissingPermission")
@@ -51,8 +63,10 @@ class BLEManager(private val context: Context) {
         // Connection state change: when the connection state changes, try to discover services
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+            Toast.makeText(context, "onConnectionStateChange", Toast.LENGTH_SHORT).show()
             super.onConnectionStateChange(gatt, status, newState)
             if (newState == BluetoothGatt.STATE_CONNECTED) {
+                Toast.makeText(context, "Connected to device", Toast.LENGTH_SHORT).show()
                 gatt?.discoverServices()
             }
         }
@@ -62,6 +76,7 @@ class BLEManager(private val context: Context) {
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
+                Toast.makeText(context, "Services discovered. Looking for characteristics.", Toast.LENGTH_SHORT).show()
                 val serviceUUID = SERVICE_UUID
                 val characteristicUUID = CHARACTERISTIC_UUID
                 val service = gatt?.getService(UUID.fromString(serviceUUID))
@@ -108,13 +123,14 @@ class BLEManager(private val context: Context) {
     // Function to start scanning for Bluetooth devices
     @SuppressLint("MissingPermission")
     fun scanForDevices() {
-        bluetoothLeScanner?.startScan(scanCallback)
+        bluetoothLeScanner?.startScan(listOf(scanFilter), scanSettings, scanCallback)
     }
 
     // Connect to the Bluetooth device
     @SuppressLint("MissingPermission")
     fun connectToDevice(device: BluetoothDevice) {
-        bluetoothGatt = device.connectGatt(context, false, gattCallback)
+        Toast.makeText(context, "Connecting to device...", Toast.LENGTH_SHORT).show()
+        bluetoothGatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
     }
 
     // Close the GATT connection when done

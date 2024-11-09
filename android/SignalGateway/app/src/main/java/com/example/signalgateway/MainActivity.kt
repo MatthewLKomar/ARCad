@@ -64,11 +64,11 @@ class MainActivity : AppCompatActivity() {
 //            }
 //        }.start(wait = true)
 //
-//        // Initialize the BLEManager
-//        bleManager = BLEManager(this)
-//
-//        // Check and request Bluetooth permissions
-//        requestBluetoothPermissions()
+        // Initialize the BLEManager
+        bleManager = BLEManager(this)
+
+        // Check and request Bluetooth permissions
+        requestBluetoothPermissions()
     }
 
     // Request Bluetooth permissions at runtime
@@ -94,6 +94,7 @@ class MainActivity : AppCompatActivity() {
         if (permissions.isNotEmpty()) {
             requestPermissionsLauncher.launch(permissions.toTypedArray())
         } else {
+            Toast.makeText(this, "Scanning for devices", Toast.LENGTH_SHORT).show()
             bleManager.scanForDevices()
         }
     }
