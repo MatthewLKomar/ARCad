@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
-from queue import Queue, Empty
+from queue import Empty
+from multiprocessing import Queue
 
 app = Flask(__name__)
 
