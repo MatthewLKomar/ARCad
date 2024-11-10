@@ -6,65 +6,9 @@
 #include "app_debug.h"
 #include "app_ble_nus.h"
 #include "nrf_pwr_mgmt.h"
-
-// global buffers for sharing data
-
-// uint8_t accelerometer_data_buf[ACCELEROMETER_N_SAMPLES * 6] = { 0 };
-// uint16_t accelerometer_num_data = 0;
+#include "app_deserializer.h"
 
 // BLE events
-
-// static bool send_pend = false;
-// static volatile bool accel_pend = false;
-// static volatile bool connected = false;
-
-// // Fresh ADC sample -- check schedule condition to wake accelerometer
-// CALLBACK_DEF(NRFX_SAADC_EVT_DONE) {
-//     if (!connected) return;
-//     int32_t v_store = voltage_read_v_store();
-    
-//     // debug_log("v store: %d mv", v_store);
-//     if (!accel_pend && v_store > V_STORE_LVL_SAMPLE) {
-//         app_sched_event_put(NULL, 0, app_sched_accelerometer_wake);
-//     }
-// }
-
-// // NUS connected
-// CALLBACK_DEF_APP_SCHED(BLE_GAP_EVT_CONNECTED) {
-//     debug_log("NUS connected");
-//     connected = true;
-// }
-
-// // NUS notifications enabled -- send data
-// CALLBACK_DEF_APP_SCHED(BLE_NUS_EVT_COMM_STARTED) {
-//     debug_log("NUS notifications enabled");
-//     if (send_pend) {    // notifications enabled after watermark interrupt
-//         debug_log("notifications enabled, sending pending data");
-//         send_pend = false;
-//         ble_send(accelerometer_data_buf, accelerometer_num_data);
-//     }
-// }
-
-// // Accelerometer watermark interrupt raised
-// CALLBACK_DEF_APP_SCHED(ACCELEROMETER_DATA_READY) {
-//     // fetch accelerometer data -- 1. init spi, 2. fetch data, 3. sleep accel, 4. deinit spi
-//     accelerometer_num_data = accelerometer_fetch_data(true, true, true);
-//     accelerometer_copy_data(accelerometer_data_buf, accelerometer_num_data);
-//     debug_log("ACCELEROMETER_DATA_READY: %d", accelerometer_num_data);
-
-//     accel_pend = false;
-//     send_pend = ble_send(accelerometer_data_buf, accelerometer_num_data) == NRF_SUCCESS;
-// }
-
-// // NUS disconnected -- reset
-// CALLBACK_DEF_APP_SCHED(BLE_GAP_EVT_DISCONNECTED) {
-//     debug_log("NUS disconnected");
-//     accelerometer_sleep(true, true);
-//     send_pend = connected = false;
-
-//     // kill everything
-//     nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_SYSOFF);
-// }
 
 // NUS connected -- do nothing here
 CALLBACK_DEF_APP_SCHED(BLE_NUS_EVT_CONNECTED)       { debug_log("NUS connected"); }
@@ -72,6 +16,27 @@ CALLBACK_DEF_APP_SCHED(BLE_NUS_EVT_CONNECTED)       { debug_log("NUS connected")
 CALLBACK_DEF_APP_SCHED(BLE_NUS_EVT_COMM_STARTED)    { debug_log("NUS notifications enabled"); }
 // NUS disconnected -- reset
 CALLBACK_DEF_APP_SCHED(BLE_GAP_EVT_DISCONNECTED)    { debug_log("NUS disconnected. Resetting."); }
+
+// Application events
+
+typedef struct data_pack_s {
+    uint32_t id;
+    int32_t value;
+    int32_t units;
+} data_pack_t;
+static uint32_t id = 0;
+
+CALLBACK_DEF_APP_SCHED(DESERIALIZER_DATA_READY) {
+    // debug_log("Deserializer data ready: %d %d", g_measure_value, g_units);
+    // pack data
+    data_pack_t data_pack = {
+        .id = id++,
+        .value = g_measure_value,
+        .units = g_units,
+    };
+    ble_send((uint8_t *)&data_pack, sizeof(data_pack));
+}
+
 
 // // Accelerometer watermark interrupt raised
 // CALLBACK_DEF_APP_SCHED(ACCELEROMETER_DATA_READY) {

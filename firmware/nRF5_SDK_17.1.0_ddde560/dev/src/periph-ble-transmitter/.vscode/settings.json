@@ -39,6 +39,7 @@
         "peer_manager.h": "c",
         "app_voltage.h": "c",
         "nrfx_lpcomp.h": "c",
-        "nrfx_saadc.h": "c"
+        "nrfx_saadc.h": "c",
+        "nrf_gpio.h": "c"
     }
 }

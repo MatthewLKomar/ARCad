@@ -14,25 +14,10 @@
 #include "app_timer.h"
 
 
-// config
-#define V_STORE_DIV_INV         3           // v_store_div = v_store / V_STORE_DIV_INV
-#define V_STORE_SAMP_PERIOD_MS  100
-
-// voltage thresholds. resolution is ~21mV
-#define V_STORE_LVL_BLE_INIT    2200        // run BLE init once storage cap is at 2.2V = 242uJ
-#define V_STORE_LVL_SAMPLE      1800        // sample + send once storage cap is at 1.8V = 162uJ
 
 // GPIO config
-#define GPIO_V_STORE_DIV_IN     NRF_SAADC_INPUT_AIN2    // capacitor voltage -- this is on P.04/AIN2 (which expands to 3...)
-#define GPIO_DIV_EN             5           // enable capacitor voltage divider
-
-#define SPI_SCK                 9
-#define SPI_MISO                10
-#define SPI_MOSI                12
-
-#define IMU_CS                  6
-#define IMU_INT1                14
-#define IMU_INT2                15
+#define PERIPH_CLK_PIN  8
+#define PERIPH_DATA_PIN 7
 
 // test config
 #define POWER_PROFILING_ENABLED 0           // enable power profiling -- runs IMU sample and BLE send on loop
@@ -43,7 +28,7 @@
 #define ENABLE_DEVICE_NAME      1           // enable device name in advertising
 
 #define APP_ADV_INTERVAL        MSEC_TO_UNITS(64, UNIT_0_625_MS)    // advertising interval (in units of 0.625 ms)
-#define APP_ADV_DURATION        MSEC_TO_UNITS(18000, UNIT_10_MS)    // advertising duration (in units of 10 milliseconds)
+#define APP_ADV_DURATION        MSEC_TO_UNITS(180000, UNIT_10_MS)    // advertising duration (in units of 10 milliseconds)
 #define MIN_CONN_INTERVAL       MSEC_TO_UNITS(20,  UNIT_1_25_MS)     /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
 #define MAX_CONN_INTERVAL       MSEC_TO_UNITS(75, UNIT_1_25_MS)     /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY           0                                 /**< Slave latency. */
