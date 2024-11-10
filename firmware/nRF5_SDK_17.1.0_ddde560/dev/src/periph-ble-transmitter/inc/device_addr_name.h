@@ -12,8 +12,6 @@ typedef struct {
 } device_addr_t;
 
 const device_addr_t device_name_lookup[2] = {   // addresses are little endian
-    {.addr = {.addr = {0x37, 0x76, 0xBC, 0x83, 0x7C, 0xEF}},
-     .name = "ALICE"},
-    {.addr = {.addr = {0x4D, 0x47, 0xBC, 0x98, 0xA5, 0xEA}},
-     .name = "BOB"}
+    {.addr = {.addr = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF}},
+     .name = "ALICE"}   // TODO: set name + addr according to actual device
 };

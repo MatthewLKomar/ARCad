@@ -36,15 +36,3 @@ CALLBACK_DEF_APP_SCHED(DESERIALIZER_DATA_READY) {
     };
     ble_send((uint8_t *)&data_pack, sizeof(data_pack));
 }
-
-
-// // Accelerometer watermark interrupt raised
-// CALLBACK_DEF_APP_SCHED(ACCELEROMETER_DATA_READY) {
-//     // fetch accelerometer data -- 1. init spi, 2. fetch data, 3. sleep accel, 4. deinit spi
-//     accelerometer_num_data = accelerometer_fetch_data(true, true, true);
-//     accelerometer_copy_data(accelerometer_data_buf, accelerometer_num_data);
-//     debug_log("ACCELEROMETER_DATA_READY: %d", accelerometer_num_data);
-
-//     ble_send(accelerometer_data_buf, accelerometer_num_data);
-// }
-
