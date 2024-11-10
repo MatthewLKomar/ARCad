@@ -51,6 +51,7 @@
 
 #include "app_ble_nus.h"
 #include "app_alive_timer.h"
+#include "app_deserializer.h"
 
 #define APP_SCHED_EVENT_SIZE    APP_TIMER_SCHED_EVENT_DATA_SIZE
 #define APP_SCHED_QUEUE_SIZE    10
@@ -89,11 +90,11 @@ int main(void) {
     debug_init();
     nrfx_gpiote_init();
     APP_SCHED_INIT(APP_SCHED_EVENT_SIZE, APP_SCHED_QUEUE_SIZE);
-    // int ret_val = nrf_sdh_enable_request();
 
     app_timer_init();
+    app_alive_timer_init();
+    deserializer_init();
 
-    // debug_log("sdh ret_val %d", ret_val);
     debug_log("initializing BLE");
     debug_flush();
 
@@ -105,7 +106,7 @@ int main(void) {
     debug_log("initialization finished");
     debug_flush();
 
-    app_alive_timer_init();
+    timer_init();
 
     // Enter main loop.
     while (true) {

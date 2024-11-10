@@ -46,6 +46,8 @@ def get_latest_data():
 
     if latest_data is None:
         return jsonify({"error_internal": "No data available"}), 404
+    elif len(latest_data) == 0:
+        return jsonify({"error_internal": "Disconected"}), 404
     
     return jsonify(latest_data), 200
 
