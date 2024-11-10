@@ -6,6 +6,7 @@ from web_server import WebServer
 from bluetoothclient import BluetoothClient
 
 from time import sleep, time
+from random import randint
 
 # async helpers
 
@@ -29,19 +30,20 @@ def ble(q, args):
     asyncio.run(ble_main(q, args))
 
 def mock_ble(q, args):
+    def gen_test_dict(id):
+        return {
+            "id": id,
+            "value": randint(0, 4000),
+            "timestamp": time()
+        }
+
     idx = 0
-    strs = [
-        "hello",
-        "message",
-        "goodbye",
-        "done"
-    ]
     while True:
-        curr_str = strs[idx % len(strs)]
+        d = gen_test_dict(idx)
         idx += 1
-        print("sending: ", curr_str)
-        q.put({"id": 0, "value": 1, "timestamp": time(), "opts": curr_str})
-        sleep(1)
+        print("sending: ", d)
+        q.put(d)
+        sleep(0.5)
 
 def web(q, args):
     ws = WebServer(q)
