@@ -185,11 +185,15 @@ static void service_error_handler(uint32_t nrf_error) {
     APP_ERROR_HANDLER(nrf_error);
 }
 
+const char default_name[] = DEVICE_NAME_DEFAULT;
 static const char * assign_device_name(void) {
     ble_gap_addr_t dev_addr;
     sd_ble_gap_addr_get(&dev_addr);
     uint8_t num_assigned = sizeof(device_name_lookup) / sizeof(*device_name_lookup);
-    static const char default_name[] = DEVICE_NAME_DEFAULT;
+
+    debug_log("device mac: %02X:%02X:%02X:%02X:%02X:%02X",
+                  dev_addr.addr[0], dev_addr.addr[1], dev_addr.addr[2],
+                  dev_addr.addr[3], dev_addr.addr[4], dev_addr.addr[5]);
 
     for (uint8_t i = 0; i < sizeof(device_name_lookup) / sizeof(*device_name_lookup); i++) {
         if (memcmp(device_name_lookup[i].addr.addr, dev_addr.addr, BLE_GAP_ADDR_LEN) == 0) {
@@ -217,10 +221,10 @@ static int gap_params_init(void) {
     err_code = sd_ble_gap_device_name_set(&sec_mode,
                                           (const uint8_t *)dev_name,
                                           strlen(dev_name));
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_UNKNOWN);
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
 
@@ -287,7 +291,8 @@ static int services_init(void) {
     qwr_init.error_handler    = nrf_qwr_error_handler;
 
     err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init);
-    if (err_code != NRF_SUCCESS) return 1;
+    debug_log("qwr init: %d", err_code);
+    if (err_code != NRF_SUCCESS) return err_code;
 
     // Initialize NUS.
     memset(&nus_init, 0, sizeof(nus_init));
@@ -295,7 +300,8 @@ static int services_init(void) {
     nus_init.data_handler = nus_data_handler;
 
     err_code = ble_nus_init(&m_nus, &nus_init);
-    if (err_code != NRF_SUCCESS) return 1;
+    debug_log("nus init: %d", err_code);
+    if (err_code != NRF_SUCCESS) return err_code;
 
     // Initialize Bond Management Service
     memset(&bms_init, 0, sizeof(bms_init));
@@ -315,7 +321,8 @@ static int services_init(void) {
     bms_init.bond_callbacks.delete_all_except_requesting = delete_all_except_requesting_bond;
 
     err_code = nrf_ble_bms_init(&m_bms, &bms_init);
-    if (err_code != NRF_SUCCESS) return 1;
+    debug_log("bms init: %d", err_code);
+    if (err_code != NRF_SUCCESS) return err_code;
 
     return (err_code != NRF_SUCCESS) ? 1 : 0;
 }
@@ -470,18 +477,18 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
 static int ble_stack_init(void) {
     ret_code_t err_code;
 
-    // err_code = nrf_sdh_enable_request();
-    // if (err_code != NRF_SUCCESS) return 1;
+    err_code = nrf_sdh_enable_request();
+    if (err_code != NRF_SUCCESS) return err_code;
 
     // Configure the BLE stack using the default settings.
     // Fetch the start address of the application RAM.
     uint32_t ram_start = 0;
     err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     // Enable BLE stack.
     err_code = nrf_sdh_ble_enable(&ram_start);
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     // Register a handler for BLE events.
     NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
@@ -503,7 +510,7 @@ static int gatt_init(void) {
     ret_code_t err_code;
 
     err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
     return (err_code != NRF_SUCCESS) ? 1 : 0;
@@ -536,7 +543,7 @@ static int peer_manager_init(void) {
     ret_code_t err_code;
 
     err_code = pm_init();
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     memset(&sec_param, 0, sizeof(ble_gap_sec_params_t));
 
@@ -555,7 +562,7 @@ static int peer_manager_init(void) {
     sec_param.kdist_peer.id  = 1;
 
     err_code = pm_sec_params_set(&sec_param);
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     err_code = pm_register(pm_evt_handler);
     return (err_code != NRF_SUCCESS) ? 1 : 0;
@@ -582,7 +589,7 @@ static int advertising_init(void) {
     init.evt_handler = on_adv_evt;
 
     err_code = ble_advertising_init(&m_advertising, &init);
-    if (err_code != NRF_SUCCESS) return 1;
+    if (err_code != NRF_SUCCESS) return err_code;
 
     ble_advertising_conn_cfg_tag_set(&m_advertising, APP_BLE_CONN_CFG_TAG);
     return 0;
@@ -596,14 +603,53 @@ static int advertising_init(void) {
  * @brief initialize BLE stack
  */
 void ble_all_services_init(void) {
-    if (    ble_stack_init()
-         || gap_params_init()
-         || gatt_init() 
-         || services_init() 
-         || advertising_init() 
-         || conn_params_init()  // optional -- this could be disabled if not needed
-         || peer_manager_init()
-         ) {
+    ret_code_t err_code;
+
+    err_code = ble_stack_init();
+    if (err_code) {
+        debug_log("ble_stack_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    err_code = gap_params_init();
+    if (err_code) {
+        debug_log("gap_params_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    err_code = gatt_init();
+    if (err_code) {
+        debug_log("gatt_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    err_code = services_init();
+    if (err_code) {
+        debug_log("services_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    err_code = advertising_init();
+    if (err_code) {
+        debug_log("advertising_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    err_code = conn_params_init();
+    if (err_code) {
+        debug_log("conn_params_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    err_code = peer_manager_init();
+    if (err_code) {
+        debug_log("peer_manager_init() failed with error code %d", err_code);
+        goto BLE_ALL_SERVICES_INIT_FAIL;
+    }
+
+    BLE_ALL_SERVICES_INIT_FAIL:
+    if (err_code) {
+        debug_flush();
         APP_ERROR_CHECK(NRF_ERROR_INTERNAL);
     }
 }

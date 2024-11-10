@@ -1,11 +1,14 @@
 #include "app_alive_timer.h"
 #include "app_debug.h"
+#include "app_ble_nus.h"
 
 APP_TIMER_DEF(m_alive_timer_id);
 
 void alive_timer_handler(void *p_context) {
     static uint32_t heartbeat = 0;
     debug_log("alive %d", heartbeat++);
+
+    ble_send((heartbeat % 2) ? "hello" : "world", 5);
 }
 
 void app_alive_timer_init(void) {

@@ -101,10 +101,11 @@ int main(void) {
     ble_all_services_init();
     advertising_start(false);
 
-    app_timer_init();
-
     // Start execution.
     debug_log("initialization finished");
+    debug_flush();
+
+    app_alive_timer_init();
 
     // Enter main loop.
     while (true) {
